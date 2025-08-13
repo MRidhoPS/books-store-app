@@ -17,8 +17,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white
-      ),
+          scaffoldBackgroundColor: Colors.white,
+          drawerTheme: DrawerThemeData(
+            backgroundColor: Colors.white,
+            scrimColor: Colors.white54,
+          ),
+          appBarTheme: AppBarTheme(
+            
+            backgroundColor: canvasColor,
+            iconTheme: IconThemeData(color: Colors.white),
+          )),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:book_store_app/components/list_book.dart';
 import 'package:book_store_app/model/book_model.dart';
 import 'package:book_store_app/model/transaction_items.dart';
 import 'package:book_store_app/repository/auth_repo.dart';
@@ -19,338 +20,251 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final SidebarXController _controller =
-      SidebarXController(selectedIndex: 0, extended: false);
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   List<CartItem> listCart = [];
-  int selectedIndex = 0; // Tambahan: untuk navigasi antar halaman
 
   late Future<BookModel> _bookFuture;
 
   @override
   void initState() {
     super.initState();
-    _bookFuture = BookRepo().getListBook(); // hanya dipanggil sekali di awal
+    _bookFuture = BookRepo().getListBook(); 
   }
 
   @override
   Widget build(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    final isSmallScreen = MediaQuery.of(context).size.width <= 321;
+    print(MediaQuery.of(context).size.width);
 
     return Scaffold(
-      key: _scaffoldKey,
-      appBar: isSmallScreen
-          ? AppBar(
-              backgroundColor: canvasColor,
-              title: const Text(
-                'Cashier-Ku',
-                style: TextStyle(color: Colors.white),
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-              ),
-              actions: [
-                IconButton(
-                  onPressed: () {
-                    AuthRepo().logoutUser();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Berhasil Logout")));
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(
-                      builder: (context) => const LoginPage(),
-                    ));
-                  },
-                  icon: const Icon(Icons.logout_rounded),
-                ),
-              ],
-            )
-          : null,
-      drawer: isSmallScreen ? _buildSidebarX() : null,
-      body: Row(
-        children: [
-          if (!isSmallScreen) _buildSidebarX(),
-          Expanded(
-            flex: 3,
-            child: IndexedStack(
-              index: selectedIndex,
-              children: [
-                _buildContent(),
-                _buildListofProducts(),
-                const AddBookPage(),
-                _buildListOfTransactionItems(),
-              ],
+      appBar: AppBar(
+        title: Text(
+          "Cashier",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: isSmallScreen ? true : false,
+        backgroundColor: canvasColor,
+      ),
+      drawerScrimColor: Colors.white54,
+      drawer: Drawer(
+        width: isSmallScreen ? 200 : 500,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: canvasColor),
+              child: Text('Menu'),
             ),
-          ),
-          selectedIndex == 0
-              ? Expanded(
-                  flex: 1,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 20, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color.fromARGB(255, 236, 236, 236),
-                          offset: const Offset(-5, 6),
-                          blurRadius: 4,
-                          blurStyle: BlurStyle.solid,
-                        )
-                      ],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        bottomLeft: Radius.circular(20),
-                      ),
-                    ),
-                    child: Builder(builder: (context) {
-                      return Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Order details",
-                              style: GoogleFonts.playfair(
-                                color: Colors.black,
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Divider(
-                              thickness: 2,
-                            ),
-                            SizedBox(
-                              height: 480,
-                              child: listCart.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                      "Keranjang kosong",
-                                      style: GoogleFonts.playfair(),
-                                    ))
-                                  : Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 20),
-                                      child: Column(
-                                        children: [
-                                          Expanded(
-                                            child: ListView.builder(
-                                              itemCount: listCart.length,
-                                              itemBuilder: (context, index) {
-                                                final item = listCart[index];
-                                                return ListTile(
-                                                  title: Text(
-                                                    item.book.title,
-                                                    style: GoogleFonts.playfair(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 14),
-                                                  ),
-                                                  subtitle: Text(
-                                                    style: GoogleFonts.inter(
-                                                        fontSize: 10),
-                                                    "${Format().formatNumber(item.book.price, 'Rp. ')} × ${item.quantity}",
-                                                  ),
-                                                  trailing: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      IconButton(
-                                                        icon: const Icon(
-                                                            Icons.remove),
-                                                        onPressed: () {
-                                                          setState(() {
-                                                            if (item.quantity >
-                                                                1) {
-                                                              item.quantity -=
-                                                                  1;
-                                                            } else {
-                                                              listCart.removeAt(
-                                                                  index);
-                                                            }
-                                                          });
-                                                        },
-                                                      ),
-                                                      Text('${item.quantity}'),
-                                                      IconButton(
-                                                        icon: const Icon(
-                                                          Icons.add,
-                                                          color: Colors.black,
-                                                        ),
-                                                        onPressed: () {
-                                                          setState(() {
-                                                            item.quantity += 1;
-                                                          });
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                padding: EdgeInsets.all(20),
-                                                backgroundColor:
-                                                    const Color.fromARGB(
-                                                        255, 10, 25, 51),
-                                              ),
-                                              onPressed: () {
-                                                Navigator.of(context)
-                                                    .push(MaterialPageRoute(
-                                                  builder: (_) => CheckoutPage(
-                                                    userId: 1,
-                                                    cartItems: listCart,
-                                                  ),
-                                                ));
-                                              },
-                                              child: const Text(
-                                                "Continue",
-                                                style: TextStyle(
-                                                    color: Colors.white),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ),
-                )
-              : SizedBox(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarX() {
-    return SidebarX(
-      controller: _controller,
-      theme: SidebarXTheme(
-        margin: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: canvasColor,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        textStyle: const TextStyle(color: Colors.white54),
-        hoverColor: scaffoldBackgroundColor,
-        hoverTextStyle: const TextStyle(color: Colors.white),
-        selectedTextStyle: const TextStyle(color: Colors.white),
-        itemTextPadding: const EdgeInsets.only(left: 30),
-        selectedItemTextPadding: const EdgeInsets.only(left: 30),
-        itemDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: canvasColor),
-        ),
-        selectedItemDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          gradient: const LinearGradient(
-            colors: [accentCanvasColor, canvasColor],
-          ),
-        ),
-        iconTheme: IconThemeData(color: Colors.white.withOpacity(0.7)),
-        selectedIconTheme: const IconThemeData(color: Colors.white),
-      ),
-      extendedTheme: const SidebarXTheme(width: 200),
-      headerBuilder: (context, extended) {
-        return SizedBox(
-          height: 100,
-          // child: Padding(
-          //   padding: const EdgeInsets.all(16.0),
-          //   child: Image.asset(''),
-          // ),
-        );
-      },
-      items: [
-        SidebarXItem(
-          icon: Icons.shopping_basket_rounded,
-          label: 'Produk',
-          onTap: () {
-            setState(() {
-              selectedIndex = 0;
-            });
-          },
-        ),
-        SidebarXItem(
-          icon: Icons.list_alt_rounded,
-          label: 'List of Produt',
-          onTap: () {
-            setState(() {
-              selectedIndex = 1;
-            });
-          },
-        ),
-        SidebarXItem(
-          icon: Icons.add,
-          label: 'Add Produk',
-          onTap: () {
-            setState(() {
-              selectedIndex = 2;
-            });
-          },
-        ),
-        SidebarXItem(
-          icon: Icons.history,
-          label: 'History Transcation',
-          onTap: () {
-            setState(() {
-              selectedIndex = 3;
-            });
-          },
-        ),
-        SidebarXItem(
-          icon: Icons.logout,
-          label: 'Logout',
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  backgroundColor: const Color.fromARGB(255, 10, 25, 51),
-                  content: const Text(
-                    'Apakah kamu ingin Log Out?',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text(
-                        "Cancel",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        AuthRepo().logoutUser();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Berhasil Logout")));
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                      child: const Text(
-                        "Yes",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                );
+            ListTile(
+              title: const Text('Item 1'),
+              onTap: () {
+                Navigator.pop(context);
               },
-            );
-          },
+            ),
+            ListTile(
+              title: const Text('Add Book'),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddBookPage(),
+                    ));
+              },
+            ),
+          ],
         ),
-      ],
+      ),
+      body: ListBookWidget(bookFuture: _bookFuture),
     );
+
+    // return Scaffold(
+    //   key: _scaffoldKey,
+    //   appBar: isSmallScreen
+    //       ? AppBar(
+    //           backgroundColor: canvasColor,
+    //           title: const Text(
+    //             'Cashier-Ku',
+    //             style: TextStyle(color: Colors.white),
+    //           ),
+    //           leading: IconButton(
+    //             icon: const Icon(Icons.menu),
+    //             onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+    //           ),
+    //           actions: [
+    //             IconButton(
+    //               onPressed: () {
+    //                 AuthRepo().logoutUser();
+    //                 ScaffoldMessenger.of(context).showSnackBar(
+    //                     const SnackBar(content: Text("Berhasil Logout")));
+    //                 Navigator.of(context).pushReplacement(MaterialPageRoute(
+    //                   builder: (context) => const LoginPage(),
+    //                 ));
+    //               },
+    //               icon: const Icon(Icons.logout_rounded),
+    //             ),
+    //           ],
+    //         )
+    //       : null,
+    //   drawer: isSmallScreen ? _buildSidebarX() : null,
+    //   body: Row(
+    //     children: [
+    //       if (!isSmallScreen) _buildSidebarX(),
+    //       Expanded(
+    //         flex: 3,
+    //         child: IndexedStack(
+    //           index: selectedIndex,
+    //           children: [
+    //             _buildContent(),
+    //             _buildListofProducts(),
+    //             const AddBookPage(),
+    //             _buildListOfTransactionItems(),
+    //           ],
+    //         ),
+    //       ),
+    //       selectedIndex == 0
+    //           ? Expanded(
+    //               flex: 1,
+    //               child: Container(
+    //                 padding: const EdgeInsets.symmetric(
+    //                     vertical: 20, horizontal: 20),
+    //                 decoration: BoxDecoration(
+    //                   color: Colors.white,
+    //                   boxShadow: [
+    //                     BoxShadow(
+    //                       color: const Color.fromARGB(255, 236, 236, 236),
+    //                       offset: const Offset(-5, 6),
+    //                       blurRadius: 4,
+    //                       blurStyle: BlurStyle.solid,
+    //                     )
+    //                   ],
+    //                   borderRadius: const BorderRadius.only(
+    //                     topLeft: Radius.circular(20),
+    //                     bottomLeft: Radius.circular(20),
+    //                   ),
+    //                 ),
+    //                 child: Builder(builder: (context) {
+    //                   return Expanded(
+    //                     child: Column(
+    //                       crossAxisAlignment: CrossAxisAlignment.start,
+    //                       children: [
+    //                         Text(
+    //                           "Order details",
+    //                           style: GoogleFonts.playfair(
+    //                             color: Colors.black,
+    //                             fontSize: 26,
+    //                             fontWeight: FontWeight.bold,
+    //                           ),
+    //                         ),
+    //                         Divider(
+    //                           thickness: 2,
+    //                         ),
+    //                         SizedBox(
+    //                           height: 480,
+    //                           child: listCart.isEmpty
+    //                               ? Center(
+    //                                   child: Text(
+    //                                   "Keranjang kosong",
+    //                                   style: GoogleFonts.playfair(),
+    //                                 ))
+    //                               : Padding(
+    //                                   padding: const EdgeInsets.symmetric(
+    //                                       vertical: 20),
+    //                                   child: Column(
+    //                                     children: [
+    //                                       Expanded(
+    //                                         child: ListView.builder(
+    //                                           itemCount: listCart.length,
+    //                                           itemBuilder: (context, index) {
+    //                                             final item = listCart[index];
+    //                                             return ListTile(
+    //                                               title: Text(
+    //                                                 item.book.title,
+    //                                                 style: GoogleFonts.playfair(
+    //                                                     fontWeight:
+    //                                                         FontWeight.bold,
+    //                                                     fontSize: 14),
+    //                                               ),
+    //                                               subtitle: Text(
+    //                                                 style: GoogleFonts.inter(
+    //                                                     fontSize: 10),
+    //                                                 "${Format().formatNumber(item.book.price, 'Rp. ')} × ${item.quantity}",
+    //                                               ),
+    //                                               trailing: Row(
+    //                                                 mainAxisSize:
+    //                                                     MainAxisSize.min,
+    //                                                 children: [
+    //                                                   IconButton(
+    //                                                     icon: const Icon(
+    //                                                         Icons.remove),
+    //                                                     onPressed: () {
+    //                                                       setState(() {
+    //                                                         if (item.quantity >
+    //                                                             1) {
+    //                                                           item.quantity -=
+    //                                                               1;
+    //                                                         } else {
+    //                                                           listCart.removeAt(
+    //                                                               index);
+    //                                                         }
+    //                                                       });
+    //                                                     },
+    //                                                   ),
+    //                                                   Text('${item.quantity}'),
+    //                                                   IconButton(
+    //                                                     icon: const Icon(
+    //                                                       Icons.add,
+    //                                                       color: Colors.black,
+    //                                                     ),
+    //                                                     onPressed: () {
+    //                                                       setState(() {
+    //                                                         item.quantity += 1;
+    //                                                       });
+    //                                                     },
+    //                                                   ),
+    //                                                 ],
+    //                                               ),
+    //                                             );
+    //                                           },
+    //                                         ),
+    //                                       ),
+    //                                       SizedBox(
+    //                                         width: double.infinity,
+    //                                         child: ElevatedButton(
+    //                                           style: ElevatedButton.styleFrom(
+    //                                             padding: EdgeInsets.all(20),
+    //                                             backgroundColor:
+    //                                                 const Color.fromARGB(
+    //                                                     255, 10, 25, 51),
+    //                                           ),
+    //                                           onPressed: () {
+    //                                             Navigator.of(context)
+    //                                                 .push(MaterialPageRoute(
+    //                                               builder: (_) => CheckoutPage(
+    //                                                 userId: 1,
+    //                                                 cartItems: listCart,
+    //                                               ),
+    //                                             ));
+    //                                           },
+    //                                           child: const Text(
+    //                                             "Continue",
+    //                                             style: TextStyle(
+    //                                                 color: Colors.white),
+    //                                           ),
+    //                                         ),
+    //                                       ),
+    //                                     ],
+    //                                   ),
+    //                                 ),
+    //                         ),
+    //                       ],
+    //                     ),
+    //                   );
+    //                 }),
+    //               ),
+    //             )
+    //           : SizedBox(),
+    //     ],
+    //   ),
+    // );
   }
 
   Widget _buildContent() {
@@ -574,7 +488,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   Widget _buildListofProducts() {
     return FutureBuilder<BookModel>(
       future: BookRepo().getListBook(),
@@ -642,6 +555,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+
 
 const canvasColor = Color(0xFF2E2E48);
 const scaffoldBackgroundColor = Color(0xFF464667);
