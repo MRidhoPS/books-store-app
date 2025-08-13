@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:book_store_app/model/book_model.dart';
+import 'package:book_store_app/model/transaction_items.dart';
 import 'package:book_store_app/repository/url_address.dart';
 import 'package:dio/dio.dart';
 // ignore: avoid_web_libraries_in_flutter
@@ -16,53 +16,34 @@ class BookRepo {
     ),
   );
 
-  // Future<Map<String, dynamic>?> addNewBook(
-  //   String title,
-  //   String price,
-  //   File imageFile,
-  // ) async {
-  //   final token = window.localStorage['token'];
+  Future<BookModel> getListBook() async {
+    final token = window.localStorage['token'];
 
-  //   String fileName = imageFile.path.split('/').last;
+    try {
+      final response = await _dio.get(
+        adminBookUrl,
+        options: Options(headers: {
+          'Authorization': 'Bearer $token',
+        }),
+      );
 
-  //   try {
-  //     FormData formData = FormData.fromMap({
-  //       'title': title,
-  //       'price': price,
-  //       'gambar': await MultipartFile.fromFile(
-  //         imageFile.path,
-  //         filename: fileName,
-  //       ),
-  //     });
+      if (response.statusCode == 200) {
+        return BookModel.fromJson(
+          response.data['data'],
+        );
+      }
 
-  //     Response response = await _dio.post(
-  //       addBookUrl,
-  //       data: formData,
-  //       options: Options(
-  //         headers: {
-  //           'Authorization': 'Bearer $token',
-  //            'Content-Type': 'multipart/form-data',
-  //         },
-  //       ),
-  //     );
+      return response.data['message'];
+    } on DioException catch (e) {
+      final errorMessage =
+          e.response?.data['message'] ?? 'Terjadi kesalahan saat get data';
+      throw errorMessage;
+    } catch (e) {
+      throw Exception('Get data gagal: ${e.toString()}');
+    }
+  }
 
-  //     if (response.statusCode == 200) {
-  //       return response.data;
-  //     } else {
-  //       return {'message': response.data['message']};
-  //     }
-  //   } on DioException catch (e) {
-  //     print(e.message);
-  //     final errorMessage =
-  //         e.response?.data['message'] ?? 'Terjadi kesalahan saat add book';
-  //     return {'message': errorMessage};
-  //   } catch (e) {
-  //     print(e.toString());
-  //     return {'message': 'Add book gagal: ${e.toString()}'};
-  //   }
-  // }
-
-Future<Map<String, dynamic>?> addNewBook(
+  Future<Map<String, dynamic>?> addNewBook(
     String title,
     String price,
     Uint8List imageBytes,
@@ -82,7 +63,7 @@ Future<Map<String, dynamic>?> addNewBook(
       });
 
       final response = await _dio.post(
-        addBookUrl,
+        adminBookUrl,
         data: formData,
         options: Options(
           headers: {
@@ -112,7 +93,7 @@ Future<Map<String, dynamic>?> addNewBook(
 
     try {
       Response response = await _dio.put(
-        '$updateBookUrl/$id',
+        '$adminBookUrl/$id',
         data: {
           'title': title,
           'price': price,
@@ -128,12 +109,10 @@ Future<Map<String, dynamic>?> addNewBook(
         return response.data;
       }
     } on DioException catch (e) {
-      print(e.message);
       final errorMessage =
           e.response?.data['message'] ?? 'Terjadi kesalahan saat update book';
       throw errorMessage;
     } catch (e) {
-      print(e);
       throw Exception('Update book gagal: ${e.toString()}');
     }
   }
@@ -142,7 +121,7 @@ Future<Map<String, dynamic>?> addNewBook(
     try {
       final token = window.localStorage['token'];
 
-      Response response = await _dio.delete('$deleteBookUrl/$id',
+      Response response = await _dio.delete('$adminBookUrl/$id',
           options: Options(headers: {
             'Authorization': 'Bearer $token',
           }));
@@ -172,7 +151,7 @@ Future<Map<String, dynamic>?> addNewBook(
       final id = window.localStorage['id'];
 
       final response = await _dio.post(
-        buyBookUrl,
+        transactionUrl,
         data: {
           "user_id": id,
           "bayar": bayar,
@@ -191,13 +170,38 @@ Future<Map<String, dynamic>?> addNewBook(
         return response.data;
       }
     } on DioException catch (e) {
-      print(e.message);
       final errorMessage =
           e.response?.data['message'] ?? 'Terjadi kesalahan saat checkout book';
+      throw "Throw Error $errorMessage";
+    } catch (e) {
+      throw Exception('Chekout book gagal: ${e.toString()}');
+    }
+  }
+
+  Future<List<TransactionItem>> getTransactionItems() async {
+    final token = window.localStorage['token'];
+
+    try {
+      final response = await _dio.get(
+        transactionUrl, // ganti URL sesuai endpoint kamu
+        options: Options(headers: {
+          'Authorization': 'Bearer $token',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> rawData = response.data['data'];
+
+        return rawData.map((item) => TransactionItem.fromJson(item)).toList();
+      } else {
+        throw Exception(response.data['message']);
+      }
+    } on DioException catch (e) {
+      final errorMessage =
+          e.response?.data['message'] ?? 'Terjadi kesalahan saat get data';
       throw errorMessage;
     } catch (e) {
-      print(e);
-      throw Exception('Chekout book gagal: ${e.toString()}');
+      throw Exception('Get transaction items gagal: ${e.toString()}');
     }
   }
 }

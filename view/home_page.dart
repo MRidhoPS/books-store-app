@@ -1,4 +1,5 @@
 import 'package:book_store_app/model/book_model.dart';
+import 'package:book_store_app/model/transaction_items.dart';
 import 'package:book_store_app/repository/auth_repo.dart';
 import 'package:book_store_app/repository/book_repo.dart';
 import 'package:book_store_app/utils/format.dart';
@@ -29,7 +30,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _bookFuture = AuthRepo().getListBook(); // hanya dipanggil sekali di awal
+    _bookFuture = BookRepo().getListBook(); // hanya dipanggil sekali di awal
   }
 
   @override
@@ -76,6 +77,7 @@ class _HomePageState extends State<HomePage> {
                 _buildContent(),
                 _buildListofProducts(),
                 const AddBookPage(),
+                _buildListOfTransactionItems(),
               ],
             ),
           ),
@@ -293,6 +295,15 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         SidebarXItem(
+          icon: Icons.history,
+          label: 'History Transcation',
+          onTap: () {
+            setState(() {
+              selectedIndex = 3;
+            });
+          },
+        ),
+        SidebarXItem(
           icon: Icons.logout,
           label: 'Logout',
           onTap: () {
@@ -505,9 +516,68 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildListOfTransactionItems() {
+    return FutureBuilder<List<TransactionItem>>(
+      future: BookRepo().getTransactionItems(), // Ganti dengan metode kamu
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else if (snapshot.hasData) {
+          final items = snapshot.data!;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "List of Transaction Items",
+                  style: GoogleFonts.playfair(
+                      fontSize: 30,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          title: Text("Transaction ID: ${item.transactionId}"),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Book ID: ${item.bookId}"),
+                              Text("Quantity: ${item.quantity}"),
+                              Text(
+                                  "Price: Rp. ${item.price.toStringAsFixed(0)}"),
+                              Text(
+                                  "Subtotal: Rp. ${item.subtotal.toStringAsFixed(0)}"),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return const Text('Tidak ada data transaksi');
+        }
+      },
+    );
+  }
+
+
   Widget _buildListofProducts() {
     return FutureBuilder<BookModel>(
-      future: AuthRepo().getListBook(),
+      future: BookRepo().getListBook(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

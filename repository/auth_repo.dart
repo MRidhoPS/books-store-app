@@ -1,5 +1,5 @@
-import 'package:book_store_app/model/book_model.dart';
 import 'package:book_store_app/repository/url_address.dart';
+import 'package:dio/browser.dart';
 import 'package:dio/dio.dart';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' show window;
@@ -14,6 +14,11 @@ class AuthRepo {
       },
     ),
   );
+
+  void setupDio() {
+    (_dio.httpClientAdapter as BrowserHttpClientAdapter).withCredentials = true;
+  }
+
 
   Future<String?> registerUsers(String username, String password) async {
     try {
@@ -43,23 +48,18 @@ class AuthRepo {
 
   Future<String?> loginUsers(String username, String password) async {
     try {
-      final response = await _dio.post(
-        loginUrl,
-        data: {
-          'username': username,
-          'password': password,
-        },
-      );
+      final response = await _dio.post(loginUrl,
+          data: {
+            'username': username,
+            'password': password,
+          },
+          options: Options(extra: {'withCredentials': true}));
 
       if (response.statusCode == 200) {
         window.localStorage['token'] = response.data['token'];
-        final token = window.localStorage['token'];
-        print(token);
 
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token!);
-        window.localStorage['id'] = decodedToken['id'].toString();
-        final id = window.localStorage['id'];
-        print(id);
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(response.data['token']);
+        window.localStorage['id'] = decodedToken['userId'].toString();
 
         return response.data['token'];
       } else {
@@ -88,34 +88,5 @@ class AuthRepo {
     window.localStorage.remove('token');
   }
 
-  Future<BookModel> getListBook() async {
-    final token = window.localStorage['token'];
-
-    try {
-      final response = await _dio.get(
-        getBookUrl,
-        options: Options(headers: {
-          'Authorization': 'Bearer $token',
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return BookModel.fromJson(
-          response.data['data'],
-        );
-      }
-
-      return response.data['message'];
-    } on DioException catch (e) {
-      print(e.message);
-      final errorMessage =
-          e.response?.data['message'] ?? 'Terjadi kesalahan saat get data';
-      throw errorMessage;
-    } catch (e) {
-      throw Exception('Get data gagal: ${e.toString()}');
-    }
-  }
-
-
-
+  
 }

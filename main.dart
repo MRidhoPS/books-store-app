@@ -4,6 +4,7 @@ import 'package:book_store_app/view/login_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
+  AuthRepo().setupDio();
   runApp(const MyApp());
 }
 
