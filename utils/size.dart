@@ -7,7 +7,7 @@ extension ScreenUtils on BuildContext {
   // Breakpoints
   bool get isSmallScreen => screenWidth <= 321;
   bool get isMediumScreen => screenWidth >= 320 && screenWidth <= 768;
-  bool get isLargeScreen => screenWidth > 768;
+  bool get isLargeScreen => screenWidth > 770;
 
   double get autoWidth {
     if (isSmallScreen) return screenWidth * 0.4; // 90% layar untuk small

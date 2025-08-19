@@ -1,16 +1,15 @@
 import 'package:book_store_app/model/book_model.dart';
-import 'package:book_store_app/repository/book_repo.dart';
+import 'package:book_store_app/provider/chart_provider.dart';
 import 'package:book_store_app/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
+import 'package:provider/provider.dart';
 import '../utils/format.dart';
 
 class CheckoutPage extends StatefulWidget {
-  final int userId;
   final List<CartItem> cartItems;
 
-  const CheckoutPage(
-      {super.key, required this.userId, required this.cartItems});
+  const CheckoutPage({super.key, required this.cartItems});
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -19,7 +18,6 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   final TextEditingController bayarController = TextEditingController();
   double totalHarga = 0;
-  String? message;
 
   @override
   void initState() {
@@ -34,22 +32,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
   }
 
-  Future<void> handleCheckout() async {
-    final bayarText = bayarController.text.replaceAll('.', ''); // Hapus titik
+  Future<void> handleCheckout(BuildContext context) async {
+    final bayarText = bayarController.text.replaceAll('.', '');
     final bayar = int.tryParse(bayarText);
+
     if (bayar == null || bayar < totalHarga) {
-      setState(() {
-        message = "Uang bayar kurang dari total.";
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Uang bayar kurang dari total.")),
+      );
       return;
     }
 
-    final result = await BookRepo().checkoutCart(
-      bayar: bayar,
-      cartItems: widget.cartItems,
-    );
+    final bookProvider = Provider.of<ChartProvider>(context, listen: false);
+    await bookProvider.checkoutBook(bayar, widget.cartItems);
 
-    if (mounted) {
+    if (context.mounted) {
+      final result = bookProvider.checkoutResSuccess;
       showDialog(
         context: context,
         builder: (context) {
@@ -58,7 +56,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   const Text(
                     'Struk Belanja',
@@ -68,7 +65,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 40),
-                  Text(result!['message'].toString()),
+                  Text(result['message'].toString()),
                   const SizedBox(height: 5),
                   Text(
                       'Total Belanja : ${Format().formatNumber(result['total'], 'Rp. ')}'),
@@ -78,14 +75,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   const SizedBox(height: 5),
                   Text(
                       'Kembalian : ${Format().formatNumber(result['kembalian'], 'Rp. ')}'),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 10),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => HomePage(),
-                          ),
-                          (route) => false);
+                        MaterialPageRoute(
+                            builder: (context) => const HomePage()),
+                        (route) => false,
+                      );
                     },
                     child: const Text(
                       'Done',
@@ -98,6 +95,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
           );
         },
       );
+    } else if (bookProvider.checkoutResError.isNotEmpty && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(bookProvider.checkoutResError)),
+      );
     }
   }
 
@@ -105,11 +106,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
-          "Checkout",
-          style: TextStyle(color: Colors.white),
-        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text("Checkout", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 10, 25, 51),
       ),
       body: Padding(
@@ -138,9 +136,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 const Text("Total: ",
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text(Format().formatNumber(totalHarga.toString(), 'Rp. '),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  Format().formatNumber(totalHarga, 'Rp. '),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -150,7 +150,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               inputFormatters: [
                 CurrencyInputFormatter(
                   thousandSeparator: ThousandSeparator.Period,
-                  mantissaLength: 0, // supaya tanpa koma
+                  mantissaLength: 0,
                 ),
               ],
               decoration: const InputDecoration(
@@ -159,23 +159,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
             ),
             const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.all(20),
-                  backgroundColor: const Color.fromARGB(255, 10, 25, 51),
-                ),
-                onPressed: handleCheckout,
-                child: const Text(
-                  "Checkout",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
+            Consumer<ChartProvider>(
+              builder: (context, provider, child) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(20),
+                      backgroundColor: const Color.fromARGB(255, 10, 25, 51),
+                    ),
+                    onPressed: provider.isLoading
+                        ? null
+                        : () => handleCheckout(context),
+                    child: provider.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            "Checkout",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 10),
-            if (message != null)
-              Text(message!, style: const TextStyle(color: Colors.red)),
           ],
         ),
       ),
