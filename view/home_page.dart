@@ -1,29 +1,15 @@
 import 'package:book_store_app/components/cart_book.dart';
 import 'package:book_store_app/components/list_book.dart';
-import 'package:book_store_app/provider/book_provider.dart';
 import 'package:book_store_app/view/add_book_page.dart';
+import 'package:book_store_app/view/history_transaction.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-        () => Provider.of<BookProvider>(context, listen: false).listBook());
-  }
-
   @override
   Widget build(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width <= 321;
-    print(MediaQuery.of(context).size.width);
+    // print(MediaQuery.of(context).size.width);
 
     return Scaffold(
       appBar: AppBar(
@@ -45,18 +31,22 @@ class _HomePageState extends State<HomePage> {
               child: Text('Menu'),
             ),
             ListTile(
-              title: const Text('Item 1'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
               title: const Text('Add Book'),
               onTap: () {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AddBookPage(),
+                    ));
+              },
+            ),
+            ListTile(
+              title: const Text('History Transaction'),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HistoryTransaction(),
                     ));
               },
             ),
@@ -79,11 +69,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-
-
-
-
 const canvasColor = Color(0xFF2E2E48);
 const scaffoldBackgroundColor = Color(0xFF464667);
 const accentCanvasColor = Color(0xFF3E3E61);
-final actionColor = const Color(0xFF5F5FA7).withOpacity(0.6);
+final actionColor = const Color.fromARGB(159, 95, 95, 167);

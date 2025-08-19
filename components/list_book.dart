@@ -4,6 +4,7 @@ import 'package:book_store_app/provider/chart_provider.dart';
 import 'package:book_store_app/utils/format.dart';
 import 'package:book_store_app/utils/size.dart';
 import 'package:book_store_app/view/home_page.dart';
+import 'package:book_store_app/view/update_book_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -127,12 +128,84 @@ class ListBookWidget extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  child: Image.network(
-                    book.image,
-                    scale: 0.8,
-                    width: context.screenWidth,
-                    height: context.isLargeScreen ? 200 : 138,
-                    fit: BoxFit.cover,
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        book.image,
+                        scale: 0.8,
+                        width: context.screenWidth,
+                        height: context.isLargeScreen ? 200 : 138,
+                        fit: BoxFit.cover,
+                      ),
+                      Positioned(
+                        left: 5,
+                        top: 5,
+                        child: IconButton(
+                          onPressed: () async {
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text("Delete Item"),
+                                    content: const Text(
+                                        "Are you sure you want to delete this item?"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text("Cancel"),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red),
+                                        onPressed: () async {
+                                          await context
+                                              .read<BookProvider>()
+                                              .deleteBook(book.id);
+
+                                          if(context.mounted){
+                                            await context
+                                                .read<BookProvider>()
+                                                .listBook();
+                                          }
+
+                                          Navigator.pop(context, true);
+                                        },
+                                        child: const Text(
+                                          "Delete",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                });
+                          },
+                          icon: Icon(
+                            Icons.delete,
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 5,
+                        right: 5,
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    UpdateBookPage(data: book),
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            Icons.more_vert_rounded,
+                            color: Colors.white54,
+                          ),
+                        ),
+                      )
+                    ],
                   ),
                 ),
                 const SizedBox(
