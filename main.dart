@@ -1,7 +1,9 @@
 import 'package:book_store_app/provider/auth_provider.dart';
 import 'package:book_store_app/provider/book_provider.dart';
 import 'package:book_store_app/provider/chart_provider.dart';
+import 'package:book_store_app/provider/transaction_provider.dart';
 import 'package:book_store_app/repository/auth_repo.dart';
+import 'package:book_store_app/repository/book_repo.dart';
 import 'package:book_store_app/view/home_page.dart';
 import 'package:book_store_app/view/login_page.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +11,6 @@ import 'package:provider/provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // AuthRepo().setupDio();
   runApp(
     MultiProvider(
       providers: [
@@ -20,7 +21,10 @@ void main() {
           create: (context) => AuthProvider(),
         ),
         ChangeNotifierProvider(
-          create: (context) => BookProvider(),
+          create: (context) => BookProvider(bookRepo: BookRepo()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => TransactionProvider(bookRepo: BookRepo()),
         ),
       ],
       child: const MyApp(),

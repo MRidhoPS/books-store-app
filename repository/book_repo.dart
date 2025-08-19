@@ -189,6 +189,8 @@ class BookRepo {
         }),
       );
 
+      print("Response transaction items: $response");
+
       if (response.statusCode == 200) {
         final List<dynamic> rawData = response.data['data'];
 
